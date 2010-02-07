@@ -84,11 +84,11 @@ module Feedzirra
       url_queue.each do |url|
         easy = Curl::Easy.new(url) do |curl|
           curl.headers["User-Agent"]        = (options[:user_agent] || USER_AGENT)
-          curl.headers["If-Modified-Since"] = options[:if_modified_since].httpdate if options.has_key?(:if_modified_since)
-          curl.headers["If-None-Match"]     = options[:if_none_match] if options.has_key?(:if_none_match)
-          curl.headers["Accept-encoding"]   = 'gzip, deflate' if options.has_key?(:compress)
+          curl.headers["If-Modified-Since"] = options[:if_modified_since].httpdate if options[:if_modified_since]
+          curl.headers["If-None-Match"]     = options[:if_none_match] if options[:if_none_match]
+          curl.headers["Accept-encoding"]   = 'gzip, deflate' if options[:compress]
           curl.follow_location = true
-          curl.userpwd = options[:http_authentication].join(':') if options.has_key?(:http_authentication)
+          curl.userpwd = options[:http_authentication].join(':') if options[:http_authentication]
           
           curl.max_redirects = options[:max_redirects] if options[:max_redirects]
           curl.timeout = options[:timeout] if options[:timeout]
@@ -203,11 +203,11 @@ module Feedzirra
     def self.add_url_to_multi(multi, url, url_queue, responses, options)
       easy = Curl::Easy.new(url) do |curl|
         curl.headers["User-Agent"]        = (options[:user_agent] || USER_AGENT)
-        curl.headers["If-Modified-Since"] = options[:if_modified_since].httpdate if options.has_key?(:if_modified_since)
-        curl.headers["If-None-Match"]     = options[:if_none_match] if options.has_key?(:if_none_match)
-        curl.headers["Accept-encoding"]   = 'gzip, deflate' if options.has_key?(:compress)
+        curl.headers["If-Modified-Since"] = options[:if_modified_since].httpdate if options[:if_modified_since]
+        curl.headers["If-None-Match"]     = options[:if_none_match] if options[:if_none_match]
+        curl.headers["Accept-encoding"]   = 'gzip, deflate' if options[:compress]
         curl.follow_location = true
-        curl.userpwd = options[:http_authentication].join(':') if options.has_key?(:http_authentication)
+        curl.userpwd = options[:http_authentication].join(':') if options[:http_authentication]
 
         curl.max_redirects = options[:max_redirects] if options[:max_redirects]
         curl.timeout = options[:timeout] if options[:timeout]
@@ -224,21 +224,21 @@ module Feedzirra
               feed.etag = etag_from_header(c.header_str)
               feed.last_modified = last_modified_from_header(c.header_str)
               responses[url] = feed
-              options[:on_success].call(url, feed) if options.has_key?(:on_success)
+              options[:on_success].call(url, feed) if options[:on_success]
             rescue Exception => e
-              options[:on_failure].call(url, c.response_code, c.header_str, c.body_str) if options.has_key?(:on_failure)
+              options[:on_failure].call(url, c.response_code, c.header_str, c.body_str) if options[:on_failure]
             end
           else
             # puts "Error determining parser for #{url} - #{c.last_effective_url}"
             # raise NoParserAvailable.new("no valid parser for content.") (this would unfirtunately fail the whole 'multi', so it's not really useable)
-            options[:on_failure].call(url, c.response_code, c.header_str, c.body_str) if options.has_key?(:on_failure)
+            options[:on_failure].call(url, c.response_code, c.header_str, c.body_str) if options[:on_failure]
           end
         end
         
         curl.on_failure do |c, err|
           add_url_to_multi(multi, url_queue.shift, url_queue, responses, options) unless url_queue.empty?
           responses[url] = c.response_code
-          options[:on_failure].call(url, c.response_code, c.header_str, c.body_str) if options.has_key?(:on_failure)
+          options[:on_failure].call(url, c.response_code, c.header_str, c.body_str) if options[:on_failure]
         end
       end
       multi.add(easy)
@@ -263,7 +263,7 @@ module Feedzirra
         curl.headers["User-Agent"]        = (options[:user_agent] || USER_AGENT)
         curl.headers["If-Modified-Since"] = feed.last_modified.httpdate if feed.last_modified
         curl.headers["If-None-Match"]     = feed.etag if feed.etag
-        curl.userpwd = options[:http_authentication].join(':') if options.has_key?(:http_authentication)
+        curl.userpwd = options[:http_authentication].join(':') if options[:http_authentication]
         curl.follow_location = true
 
         curl.max_redirects = options[:max_redirects] if options[:max_redirects]
@@ -278,9 +278,9 @@ module Feedzirra
             updated_feed.last_modified = last_modified_from_header(c.header_str)
             feed.update_from_feed(updated_feed)
             responses[feed.feed_url] = feed
-            options[:on_success].call(feed) if options.has_key?(:on_success)
+            options[:on_success].call(feed) if options[:on_success]
           rescue Exception => e
-            options[:on_failure].call(feed, c.response_code, c.header_str, c.body_str) if options.has_key?(:on_failure)
+            options[:on_failure].call(feed, c.response_code, c.header_str, c.body_str) if options[:on_failure]
           end
         end
 
@@ -289,10 +289,10 @@ module Feedzirra
           response_code = c.response_code
           if response_code == 304 # it's not modified. this isn't an error condition
             responses[feed.feed_url] = feed
-            options[:on_success].call(feed) if options.has_key?(:on_success)
+            options[:on_success].call(feed) if options[:on_success]
           else
             responses[feed.url] = c.response_code
-            options[:on_failure].call(feed, c.response_code, c.header_str, c.body_str) if options.has_key?(:on_failure)
+            options[:on_failure].call(feed, c.response_code, c.header_str, c.body_str) if options[:on_failure]
           end
         end
       end
